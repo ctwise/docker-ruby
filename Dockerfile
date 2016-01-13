@@ -1,43 +1,28 @@
-# The container includes:
-#
-# * MRI Ruby 2.2.2
-# * Bundler
-# * Image Magick
-#
+FROM alpine:3.2
 
-FROM ctwise/phusion
+# Initial setup
+RUN apk update
+RUN apk add --quiet --force --virtual .setup-timezone tzdata
+RUN setup-timezone -z /usr/share/zoneinfo/America/New_York
+RUN apk add bash
 
 # Add compiler
-RUN apt-get update
-RUN apt-get upgrade -yq
-RUN apt-get -yq install build-essential
-RUN apt-get -yq install zlib1g-dev libssl-dev libxml2-dev libxslt1-dev libffi-dev libyaml-dev libreadline6-dev
-
-ENV RUBY_MAJOR 2.2
-ENV RUBY_VERSION 2.2.2
-
-# Set $PATH so that non-login shells will see the Ruby binaries
-ENV PATH $PATH:/opt/rubies/ruby-$RUBY_VERSION/bin
-
-# Install MRI Ruby $RUBY_VERSION
-RUN curl -O http://ftp.ruby-lang.org/pub/ruby/$RUBY_MAJOR/ruby-$RUBY_VERSION.tar.gz
-RUN tar -zxvf ruby-$RUBY_VERSION.tar.gz
-RUN cd ruby-$RUBY_VERSION && ./configure --disable-install-doc && make && make install
-RUN rm -r ruby-$RUBY_VERSION ruby-$RUBY_VERSION.tar.gz
-RUN echo 'gem: --no-document' > /usr/local/etc/gemrc
+RUN apk add build-base zlib-dev openssl-dev libxml2-dev libxslt-dev libffi-dev readline-dev
+RUN apk add ruby ruby-dev ruby-rdoc ruby-irb
 
 # ==============================================================================
 # Rubygems and Bundler
 # ==============================================================================
 
-ENV RUBYGEMS_MAJOR 2.3
-ENV RUBYGEMS_VERSION 2.3.0
+ADD https://github.com/rubygems/rubygems/releases/download/v2.2.3/rubygems-update-2.2.3.gem /tmp/
+RUN gem install --local /tmp/rubygems-update-2.2.3.gem
+RUN rm /tmp/rubygems-update-2.2.3.gem
 
-# Install rubygems and bundler
-ADD http://production.cf.rubygems.org/rubygems/rubygems-$RUBYGEMS_VERSION.tgz /tmp/
-RUN cd /tmp && tar -zxf /tmp/rubygems-$RUBYGEMS_VERSION.tgz
-RUN cd /tmp/rubygems-$RUBYGEMS_VERSION && ruby setup.rb && /bin/bash -l -c 'gem install bundler --no-rdoc --no-ri'
+ENV RUBYGEMS_MAJOR 2.2
+ENV RUBYGEMS_VERSION 2.2.3
+
 RUN echo "gem: --no-ri --no-rdoc" > ~/.gemrc
+RUN gem install bundler
 
 # Define working directory
 WORKDIR /app
