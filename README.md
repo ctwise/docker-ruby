@@ -1,4 +1,4 @@
-Ruby 2.2 image based on Phusion for minimal size.
+Ruby 2.2 image based on Alpine for minimal size.
 
 The working directory is `/app`.
 
